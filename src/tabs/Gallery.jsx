@@ -1,7 +1,7 @@
 import { Component } from 'react';
 
 import * as ImageService from 'service/image-service';
-import { Button, SearchForm, Grid, GridItem, Text, CardItem } from 'components';
+import { Button, SearchForm, Grid, GridItem, Text, CardItem, Modal } from 'components';
 import { Loader } from 'components/Loader/Loader';
 
 export class Gallery extends Component {
@@ -13,9 +13,11 @@ export class Gallery extends Component {
     showBtn: false,
     error: null,
     isLoading: false,
+    showModal: false,
+    modalImage: {},
   };
 
-  async componentDidUpdate(prevProps, prevState) {
+  async componentDidUpdate(_, prevState) {
     const { query, page } = this.state;
 
     if (page !== prevState.page || query !== prevState.query) {
@@ -46,23 +48,34 @@ export class Gallery extends Component {
     this.setState(prevState => ({ page: prevState.page + 1 }));
   };
 
+  handleOpenModal = image => {
+    const modalImage = { src: image.src, alt: image.alt };
+    this.setState({ modalImage, showModal: true });
+  };
+
+  handleCloseModal = () => {
+    this.setState({ showModal: false });
+  };
+
   render() {
+    const { imgs, isLoading, showBtn, isEmpty, error, showModal, modalImage } = this.state;
     return (
       <>
         <SearchForm onSubmit={this.onSubmit} />
         <Grid>
-          {this.state.imgs.map(({ id, src, avg_color, alt }) => (
-            <GridItem key={id}>
+          {imgs.map(({ id, src, avg_color, alt }) => (
+            <GridItem onClick={() => this.handleOpenModal({ src, alt })} key={id}>
               <CardItem color={avg_color}>
                 <img src={src.large} alt={alt} />
               </CardItem>
             </GridItem>
           ))}
         </Grid>
-        {this.state.isLoading && <Loader />}
-        {this.state.showBtn && <Button onClick={this.handleLoadMore}>Load more</Button>}
-        {this.state.isEmpty && <Text textAlign="center">Sorry. There are no images ... 😭</Text>}
-        {this.state.error && <Text textAlign="center">Sorry. {this.state.error} ... 😭</Text>}
+        {isLoading && <Loader />}
+        {showBtn && <Button onClick={this.handleLoadMore}>Load more</Button>}
+        {showModal && <Modal image={modalImage} onClose={this.handleCloseModal} />}
+        {isEmpty && <Text textAlign="center">Sorry. There are no images ... 😭</Text>}
+        {error && <Text textAlign="center">Sorry. {this.state.error} ... 😭</Text>}
       </>
     );
   }
